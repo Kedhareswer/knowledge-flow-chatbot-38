@@ -1,6 +1,5 @@
-
-import { type NextRequest, NextResponse } from "next/server"
-import { HfInference } from "@huggingface/inference"
+import { type NextRequest, NextResponse } from "next/server";
+import { InferenceClient } from "@huggingface/inference";
 
 export async function POST(request: NextRequest) {
   let embeddingModel: string = "sentence-transformers/all-MiniLM-L6-v2"; // Default model
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid text input" }, { status: 400 });
     }
 
-    const client = new HfInference(clientToken); // Use the determined token
+    const client = new InferenceClient(clientToken); // Use the determined token
     embeddingModel = model || "sentence-transformers/all-MiniLM-L6-v2";
 
     console.log(`Generating embedding with model: ${embeddingModel}`);
