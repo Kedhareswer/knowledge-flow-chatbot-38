@@ -480,7 +480,7 @@ export default function QuantumPDFChatbot() {
                       <h2 className="font-bold text-lg">System Monitor</h2>
                       <SystemStatus
                         modelStatus={modelStatus}
-                        aiConfig={aiConfig}
+                        apiConfig={aiConfig}
                         documents={documents}
                         messages={messages}
                         ragEngine={ragEngine ? ragEngine.getStatus() : {}}

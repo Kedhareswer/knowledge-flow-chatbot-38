@@ -39,7 +39,26 @@ interface QueryResponse {
 }
 
 interface AIConfig {
-  provider: "huggingface" | "openai" | "anthropic" | "aiml" | "groq"
+  provider:
+    | "openai"
+    | "anthropic"
+    | "groq"
+    | "cohere"
+    | "huggingface"
+    | "aiml"
+    | "openrouter"
+    | "deepinfra"
+    | "deepseek"
+    | "googleai"
+    | "vertex"
+    | "mistral"
+    | "perplexity"
+    | "together"
+    | "xai"
+    | "fireworks"
+    | "replicate"
+    | "anyscale"
+    | "cerebras"
   apiKey: string
   model: string
   baseUrl?: string
@@ -54,6 +73,11 @@ export class RAGEngine {
 
   constructor() {
     this.pdfParser = new PDFParser()
+  }
+
+  // Make aiClient public to fix the access error
+  get aiClient() {
+    return this.aiClient
   }
 
   async initialize(config: AIConfig) {

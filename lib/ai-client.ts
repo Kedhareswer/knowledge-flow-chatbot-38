@@ -75,10 +75,11 @@ export class AIClient {
           )
           return this.generateFallbackEmbedding(text)
       }
-    } catch (directError) {
+    } catch (directError: unknown) {
+      const errorMessage = directError instanceof Error ? directError.message : 'Unknown error'
       console.error(
         `AIClient: Error in direct text embedding with provider ${this.config.provider}:`,
-        directError.message,
+        errorMessage,
       )
       console.log("AIClient: Attempting final hash-fallback for text...")
       return this.generateFallbackEmbedding(text)
@@ -101,10 +102,11 @@ export class AIClient {
         if (i < texts.length - 1) {
           await new Promise((resolve) => setTimeout(resolve, 100))
         }
-      } catch (error) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         console.error(
           `AIClient:generateEmbeddings - Error for text at index ${i} ('${text.substring(0, 30)}...'):`,
-          error.message,
+          errorMessage,
         )
         embeddings.push(this.generateFallbackEmbedding(text))
       }
@@ -139,9 +141,10 @@ export class AIClient {
         throw new Error("Invalid embedding response from backend API")
       }
       return result.embedding
-    } catch (error) {
-      console.error("AIClient: Error calling backend HuggingFace embedding API:", error.message)
-      throw new Error(`Hugging Face embedding via backend failed: ${error.message}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error("AIClient: Error calling backend HuggingFace embedding API:", errorMessage)
+      throw new Error(`Hugging Face embedding via backend failed: ${errorMessage}`)
     }
   }
 
@@ -180,7 +183,7 @@ export class AIClient {
         throw new Error("Invalid embedding data from OpenAI API")
       }
       return result.data[0].embedding
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error(`OpenAI text embedding API request failed: ${error.message}`)
     }
   }
@@ -300,7 +303,7 @@ export class AIClient {
 
       console.log(`AIML embedding generated successfully: ${embedding.length} dimensions`)
       return embedding
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`AIML embedding generation failed: ${error instanceof Error ? error.message : "Unknown error"}`)
 
       // Don't throw immediately, let the caller handle fallback
@@ -388,7 +391,7 @@ export class AIClient {
       } else {
         throw new Error("Unexpected embedding format from Cohere API")
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Cohere embedding generation failed: ${error instanceof Error ? error.message : "Unknown error"}`)
       console.log("Using fallback embedding for Cohere")
       return this.generateFallbackEmbedding(text)
@@ -442,7 +445,7 @@ export class AIClient {
       }
 
       return result.data[0].embedding
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Fireworks embedding generation failed: ${error.message}`)
       return this.generateFallbackEmbedding(text)
     }
@@ -483,7 +486,7 @@ export class AIClient {
       }
 
       return result.data[0].embedding
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`DeepInfra embedding generation failed: ${error.message}`)
       return this.generateFallbackEmbedding(text)
     }
@@ -524,7 +527,7 @@ export class AIClient {
       }
 
       return result.data[0].embedding
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Together embedding generation failed: ${error.message}`)
       return this.generateFallbackEmbedding(text)
     }
@@ -565,7 +568,7 @@ export class AIClient {
       }
 
       return result.embedding.values
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Google AI embedding generation failed: ${error.message}`)
       return this.generateFallbackEmbedding(text)
     }
@@ -699,7 +702,7 @@ export class AIClient {
       embedding[hash % dimension] += 1 / (index + 1)
     })
     const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0))
-    return embedding.map((val) => (magnitude > 0 ? val / magnitude : 0))
+    return embedding.map((val: number) => (magnitude > 0 ? val / magnitude : 0))
   }
 
   private simpleHash(str: string): number {
