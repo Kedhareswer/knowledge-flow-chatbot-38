@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from "react"
@@ -249,8 +250,8 @@ export default function QuantumPDFChatbot() {
 
   const handleSearch = async (query: string, filters: any) => {
     try {
-      // Generate embedding for the query
-      const embedding = (await ragEngine.aiClient?.generateEmbedding(query)) || []
+      // Generate embedding for the query using the RAG engine's client
+      const embedding = ragEngine.client ? await ragEngine.client.generateEmbedding(query) : []
 
       // Search using vector database
       const results = await vectorDB.search(query, embedding, {
