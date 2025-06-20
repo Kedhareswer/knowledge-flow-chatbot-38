@@ -1,3 +1,4 @@
+
 // Browser-compatible image processing utilities
 import { modelMetadata } from "./model"
 
@@ -81,14 +82,14 @@ export async function normalizeImage(imageUrl: string, width: number, height: nu
 
 export async function generatePreprocessingSteps(
   imageUrl: string,
-  modelId = "cifar100",
+  modelId = "mobilenet",
 ): Promise<{
   original: string
   resized: string
   normalized: string
 }> {
   try {
-    const metadata = modelMetadata[modelId as keyof typeof modelMetadata] || modelMetadata.cifar100
+    const metadata = modelMetadata[modelId as keyof typeof modelMetadata] || modelMetadata.mobilenet
     const inputSize = metadata.inputSize
 
     // Original image (just use the original)
