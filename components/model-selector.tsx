@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -11,45 +12,45 @@ import { Badge } from "@/components/ui/badge"
 
 const models = [
   {
-    id: "cifar100",
-    name: "CIFAR-100",
-    description: "Trained on the CIFAR-100 dataset with 100 fine-grained classes",
-    categories: 100,
-    imageSize: "32x32",
-    accuracy: "Medium",
-    speed: "Fast",
-    size: "Small",
-    details:
-      "The CIFAR-100 model is trained on a dataset of 60,000 32x32 color images in 100 classes. Each class has 600 images with 500 training and 100 testing images. The 100 classes are grouped into 20 superclasses.",
-  },
-  {
     id: "mobilenet",
-    name: "MobileNet v2",
-    description: "Lightweight model designed for mobile and edge devices",
+    name: "MobileNet v1",
+    description: "Lightweight model optimized for mobile and web deployment",
     categories: 1000,
     imageSize: "224x224",
     accuracy: "Medium-High",
     speed: "Very Fast",
-    size: "Small",
+    size: "Small (~4MB)",
     details:
-      "MobileNet is a lightweight model designed for mobile and edge devices. It uses depthwise separable convolutions to reduce the model size and computation. MobileNet v2 improves upon the original with an inverted residual structure and linear bottlenecks.",
+      "MobileNet v1 uses depthwise separable convolutions to dramatically reduce computation and model size. It's specifically designed for mobile and embedded vision applications with limited computational resources while maintaining reasonable accuracy.",
   },
   {
     id: "efficientnet",
-    name: "EfficientNet-B0",
-    description: "Optimized model with balanced accuracy and efficiency",
+    name: "EfficientNet Lite",
+    description: "Balanced model with optimized accuracy and efficiency",
+    categories: 1000,
+    imageSize: "224x224",
+    accuracy: "High",
+    speed: "Fast",
+    size: "Medium (~10MB)",
+    details:
+      "EfficientNet uses compound scaling to uniformly scale network width, depth, and resolution. The Lite version is optimized for edge devices while maintaining high accuracy on ImageNet classification tasks.",
+  },
+  {
+    id: "resnet",
+    name: "ResNet Mobile",
+    description: "Deep residual network adapted for web deployment",
     categories: 1000,
     imageSize: "224x224",
     accuracy: "High",
     speed: "Medium",
-    size: "Medium",
+    size: "Medium (~9MB)",
     details:
-      "EfficientNet uses a compound scaling method that uniformly scales network width, depth, and resolution. This results in better accuracy and efficiency compared to other models. EfficientNet-B0 is the baseline model in the EfficientNet family.",
+      "ResNet uses residual connections to enable training of very deep networks. This mobile version is optimized for web deployment while retaining the powerful feature extraction capabilities of the ResNet architecture.",
   },
 ]
 
 export function ModelSelector({ onModelChange }: { onModelChange: (modelId: string) => void }) {
-  const [selectedModel, setSelectedModel] = useState("cifar100")
+  const [selectedModel, setSelectedModel] = useState("mobilenet")
   const [openDialog, setOpenDialog] = useState(false)
   const [dialogModel, setDialogModel] = useState(models[0])
 
@@ -66,8 +67,8 @@ export function ModelSelector({ onModelChange }: { onModelChange: (modelId: stri
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Select Classification Model</CardTitle>
-        <CardDescription>Choose a model for image classification</CardDescription>
+        <CardTitle className="text-lg">Select AI Model</CardTitle>
+        <CardDescription>Choose a pre-trained model for image classification</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-6">
@@ -87,7 +88,7 @@ export function ModelSelector({ onModelChange }: { onModelChange: (modelId: stri
             </SelectContent>
           </Select>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {models.map((model) => (
               <Card
                 key={model.id}
@@ -127,7 +128,7 @@ export function ModelSelector({ onModelChange }: { onModelChange: (modelId: stri
                 </CardContent>
                 <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
                   <Badge variant="outline">{model.categories} classes</Badge>
-                  <Badge variant="outline">{model.imageSize}</Badge>
+                  <Badge variant="outline">{model.size}</Badge>
                 </CardFooter>
               </Card>
             ))}

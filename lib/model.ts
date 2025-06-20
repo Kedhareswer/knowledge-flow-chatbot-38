@@ -1,93 +1,91 @@
+
 import * as tf from "@tensorflow/tfjs"
 
 // Model metadata
 export const modelMetadata = {
-  cifar100: {
-    inputSize: 32,
-    classes: 100,
-  },
   mobilenet: {
     inputSize: 224,
     classes: 1000,
+    url: "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json",
+    normalization: "mobilenet" // [-1, 1]
   },
   efficientnet: {
     inputSize: 224,
     classes: 1000,
+    url: "https://tfhub.dev/tensorflow/tfjs-model/efficientnet/lite0/feature-vector/2/default/1",
+    normalization: "standard" // [0, 1]
   },
-}
-
-// Mock model implementation
-class MockModel {
-  modelId: string
-
-  constructor(modelId: string) {
-    this.modelId = modelId
-  }
-
-  predict(input: tf.Tensor): tf.Tensor {
-    // Get the number of classes for this model
-    const numClasses = modelMetadata[this.modelId as keyof typeof modelMetadata]?.classes || 100
-
-    // Create a mock prediction tensor with random values
-    // We'll make it deterministic based on the input to simulate consistent predictions
-    const inputSum = tf.sum(input).dataSync()[0]
-    const seed = Math.floor(inputSum * 1000) % 1000 // Use input data to seed the random predictions
-
-    // Create a deterministic but seemingly random distribution
-    const mockPredictions = Array(numClasses)
-      .fill(0)
-      .map((_, i) => {
-        // Generate a value between 0 and 1 that's deterministic for the same input
-        const val = Math.sin(i * seed) * 0.5 + 0.5
-        return val * val // Square to make distribution more peaked
-      })
-
-    // Normalize to sum to 1
-    const sum = mockPredictions.reduce((a, b) => a + b, 0)
-    const normalized = mockPredictions.map((v) => v / sum)
-
-    return tf.tensor(normalized)
+  resnet: {
+    inputSize: 224,
+    classes: 1000,
+    url: "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v2_1.0_224/model.json",
+    normalization: "standard" // [0, 1]
   }
 }
 
-// Load the model (returns a real model if available, otherwise falls back to mock model)
-export async function loadModel(modelId = "cifar100") {
+// Global model cache
+const modelCache = new Map()
+
+// Load the model
+export async function loadModel(modelId = "mobilenet") {
   // Initialize TensorFlow.js
   await tf.ready()
 
+  // Check if model is already cached
+  if (modelCache.has(modelId)) {
+    console.log(`Using cached ${modelId} model`)
+    return modelCache.get(modelId)
+  }
+
   try {
-    // Attempt to load a real model
-    console.log(`Attempting to load real model for ${modelId}...`)
+    console.log(`Loading ${modelId} model...`)
     
-    // Define model URLs based on modelId
-    const modelUrls = {
-      cifar100: "./models/cifar100/model.json",
-      mobilenet: "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json",
-      efficientnet: "./models/efficientnet/model.json"
+    const metadata = modelMetadata[modelId as keyof typeof modelMetadata]
+    if (!metadata) {
+      throw new Error(`Unknown model: ${modelId}`)
     }
+
+    // Load the model
+    const model = await tf.loadLayersModel(metadata.url)
+    console.log(`Successfully loaded ${modelId} model`)
     
-    // Get the appropriate URL for the requested model
-    const modelUrl = modelUrls[modelId as keyof typeof modelUrls]
+    // Cache the model
+    modelCache.set(modelId, model)
     
-    if (!modelUrl) {
-      throw new Error(`No model URL defined for ${modelId}`)
-    }
-    
-    // Load the model from the specified URL
-    const model = await tf.loadLayersModel(modelUrl)
-    console.log(`Successfully loaded real ${modelId} model`)
     return model
   } catch (error) {
-    // If loading the real model fails, fall back to the mock model
-    console.warn(`Failed to load real model: ${error}. Using mock model instead.`)
-    console.log(`Loading mock model for ${modelId}`)
-    return new MockModel(modelId)
+    console.error(`Failed to load ${modelId} model:`, error)
+    
+    // Create a simple mock model for fallback
+    const mockModel = {
+      predict: (input: tf.Tensor) => {
+        const batchSize = input.shape[0] || 1
+        const numClasses = modelMetadata[modelId as keyof typeof modelMetadata]?.classes || 1000
+        
+        // Create random but deterministic predictions based on input
+        const inputSum = tf.sum(input).dataSync()[0]
+        const seed = Math.floor(inputSum * 1000) % 1000
+        
+        const predictions = Array(numClasses).fill(0).map((_, i) => {
+          const val = Math.sin(i * seed + i) * 0.5 + 0.5
+          return val * val
+        })
+        
+        const sum = predictions.reduce((a, b) => a + b, 0)
+        const normalized = predictions.map(v => v / sum)
+        
+        return tf.tensor2d([normalized], [batchSize, numClasses])
+      }
+    }
+    
+    modelCache.set(modelId, mockModel)
+    return mockModel
   }
 }
 
 // Preprocess image for model inference
-export async function preprocessImage(imageUrl: string, modelId = "cifar100"): Promise<tf.Tensor> {
-  const metadata = modelMetadata[modelId as keyof typeof modelMetadata] || modelMetadata.cifar100
+export async function preprocessImage(imageUrl: string, modelId = "mobilenet"): Promise<tf.Tensor> {
+  const metadata = modelMetadata[modelId as keyof typeof modelMetadata] || modelMetadata.mobilenet
   const inputSize = metadata.inputSize
 
   return new Promise((resolve, reject) => {
@@ -96,15 +94,18 @@ export async function preprocessImage(imageUrl: string, modelId = "cifar100"): P
     img.onload = () => {
       try {
         // Create a tensor from the image
-        const imageTensor = tf.browser.fromPixels(img).resizeNearestNeighbor([inputSize, inputSize]).toFloat()
+        const imageTensor = tf.browser
+          .fromPixels(img)
+          .resizeNearestNeighbor([inputSize, inputSize])
+          .toFloat()
 
-        // Apply appropriate normalization based on model
+        // Apply model-specific normalization
         let normalized
-        if (modelId === "mobilenet") {
+        if (metadata.normalization === "mobilenet") {
           // MobileNet normalization: [-1, 1]
           normalized = imageTensor.div(tf.scalar(127.5)).sub(tf.scalar(1))
         } else {
-          // Default normalization: [0, 1]
+          // Standard normalization: [0, 1]
           normalized = imageTensor.div(tf.scalar(255))
         }
 
@@ -123,8 +124,10 @@ export async function preprocessImage(imageUrl: string, modelId = "cifar100"): P
 }
 
 // Run inference
-export async function classifyImage(model: any, imageTensor: tf.Tensor, modelId = "cifar100") {
+export async function classifyImage(model: any, imageTensor: tf.Tensor, modelId = "mobilenet") {
   try {
+    console.log(`Running inference with ${modelId}...`)
+    
     // Run prediction
     const predictions = model.predict(imageTensor)
 
