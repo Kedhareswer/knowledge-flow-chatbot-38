@@ -1,9 +1,8 @@
-
 "use client"
 
-import { loadModel, preprocessImage, classifyImage as runInference } from "@/lib/model"
-import { IMAGENET_CLASSES, getImageNetSuperclass } from "@/lib/imagenet-classes"
-import { generatePreprocessingSteps } from "@/lib/image-processing"
+import { loadModel, preprocessImage, classifyImage as runInference } from "../lib/model"
+import { IMAGENET_CLASSES, getImageNetSuperclass } from "../lib/imagenet-classes"
+import { generatePreprocessingSteps } from "../lib/image-processing"
 
 export async function classifyImage(imageUrl: string, modelId = "mobilenet") {
   try {
