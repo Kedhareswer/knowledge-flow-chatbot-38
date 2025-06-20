@@ -1,5 +1,6 @@
-import { ImageUploader } from "@/components/image-uploader"
-import { ResultsDisplay } from "@/components/results-display"
+
+import { ImageUploader } from "../components/image-uploader"
+import { ResultsDisplay } from "../components/results-display"
 
 export default function Home() {
   return (
