@@ -5,11 +5,11 @@ import type React from "react"
 
 import { useState, useRef } from "react"
 import { Upload, ImageIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { classifyImage } from "@/app/actions"
+import { Button } from "./ui/button"
+import { Card, CardContent } from "./ui/card"
+import { classifyImage } from "../app/actions"
 import Image from "next/image"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "../hooks/use-toast"
 import { ModelSelector } from "./model-selector"
 
 export function ImageUploader() {
