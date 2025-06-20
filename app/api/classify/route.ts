@@ -1,3 +1,4 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 import { loadModel, preprocessImage, classifyImage } from "@/lib/model"
 import { CIFAR100_CLASSES, CIFAR100_SUPERCLASSES } from "@/lib/cifar100-classes"
@@ -11,15 +12,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 })
     }
 
-    // Convert file to buffer
+    // Convert file to data URL
     const arrayBuffer = await imageFile.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    const dataUrl = `data:${imageFile.type};base64,${base64}`
 
     // Load model
     const model = await loadModel()
 
     // Preprocess image
-    const tensor = await preprocessImage(buffer)
+    const tensor = await preprocessImage(dataUrl)
 
     // Run inference
     const predictions = await classifyImage(model, tensor)

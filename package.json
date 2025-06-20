@@ -39,6 +39,7 @@
     "@radix-ui/react-tooltip": "latest",
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-converter": "^4.22.0",
+    "@vitejs/plugin-react": "^4.5.2",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
