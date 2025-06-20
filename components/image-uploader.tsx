@@ -1,8 +1,6 @@
 
 "use client"
 
-import type React from "react"
-
 import { useState, useRef } from "react"
 import { Upload, ImageIcon } from "lucide-react"
 import { Button } from "./ui/button"
@@ -22,13 +20,11 @@ export function ImageUploader() {
 
   const handleModelChange = (modelId: string) => {
     setSelectedModel(modelId)
-    console.log(`Model changed to: ${modelId}`)
   }
 
   const handleFileChange = async (file: File) => {
     if (!file) return
 
-    // Check if file is an image
     if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
@@ -38,10 +34,9 @@ export function ImageUploader() {
       return
     }
 
-    // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast({
-        title: "File too large",
+        title: "File too large", 
         description: "Please upload an image smaller than 10MB",
         variant: "destructive",
       })
@@ -50,75 +45,57 @@ export function ImageUploader() {
 
     try {
       setIsClassifying(true)
-
-      // Convert file to data URL for preview and processing
       const imageUrl = await readFileAsDataURL(file)
       setImage(imageUrl)
 
-      toast({
-        title: "Image uploaded",
-        description: `Classifying with ${selectedModel}...`,
-      })
+      const result = await classifyImage(imageUrl, selectedModel)
 
-      try {
-        // Classify the image
-        console.log(`Classifying image with ${selectedModel}...`)
-        const result = await classifyImage(imageUrl, selectedModel)
-
-        if (result.error) {
-          throw new Error(result.error)
-        }
-
-        // Dispatch custom event with classification results
-        window.dispatchEvent(
-          new CustomEvent("classification-result", {
-            detail: {
-              ...result,
-              originalImage: imageUrl,
-            },
-          }),
-        )
-
-        toast({
-          title: "Classification complete!",
-          description: `Top result: ${result.results?.[0]?.className || 'Unknown'} (${Math.round((result.results?.[0]?.probability || 0) * 100)}%)`,
-        })
-      } catch (error) {
-        console.error("Error classifying image:", error)
-        toast({
-          title: "Classification failed",
-          description: "Using demo results instead. Check console for details.",
-          variant: "destructive",
-        })
-
-        // Dispatch fallback event with mock data
-        window.dispatchEvent(
-          new CustomEvent("classification-result", {
-            detail: {
-              results: [
-                { className: "golden retriever", superclass: "mammals", probability: 0.85 },
-                { className: "dog", superclass: "mammals", probability: 0.10 },
-                { className: "puppy", superclass: "mammals", probability: 0.03 },
-                { className: "animal", superclass: "mammals", probability: 0.01 },
-                { className: "pet", superclass: "mammals", probability: 0.01 },
-              ],
-              preprocessingSteps: {
-                original: imageUrl,
-                resized: imageUrl,
-                normalized: imageUrl,
-              },
-              originalImage: imageUrl,
-              modelId: selectedModel,
-              isMock: true,
-            },
-          }),
-        )
+      if (result.error) {
+        throw new Error(result.error)
       }
-    } catch (error) {
-      console.error("Error uploading image:", error)
+
+      window.dispatchEvent(
+        new CustomEvent("classification-result", {
+          detail: {
+            ...result,
+            originalImage: imageUrl,
+          },
+        })
+      )
+
       toast({
-        title: "Upload failed",
-        description: "There was an error uploading your image",
+        title: "Classification complete!",
+        description: `Top result: ${result.results?.[0]?.className || 'Unknown'}`,
+      })
+    } catch (error) {
+      console.error("Classification error:", error)
+      
+      // Fallback mock data
+      window.dispatchEvent(
+        new CustomEvent("classification-result", {
+          detail: {
+            results: [
+              { className: "golden retriever", superclass: "mammals", probability: 0.85 },
+              { className: "dog", superclass: "mammals", probability: 0.10 },
+              { className: "puppy", superclass: "mammals", probability: 0.03 },
+              { className: "animal", superclass: "mammals", probability: 0.01 },
+              { className: "pet", superclass: "mammals", probability: 0.01 },
+            ],
+            preprocessingSteps: {
+              original: image,
+              resized: image,
+              normalized: image,
+            },
+            originalImage: image,
+            modelId: selectedModel,
+            isMock: true,
+          },
+        })
+      )
+
+      toast({
+        title: "Using demo mode",
+        description: "Real model failed, showing example results",
         variant: "destructive",
       })
     } finally {
@@ -126,7 +103,6 @@ export function ImageUploader() {
     }
   }
 
-  // Helper function to read file as data URL
   const readFileAsDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -148,8 +124,7 @@ export function ImageUploader() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       handleFileChange(e.dataTransfer.files[0])
     }
   }
@@ -162,62 +137,66 @@ export function ImageUploader() {
     <div className="space-y-6">
       <ModelSelector onModelChange={handleModelChange} />
 
-      <div className="space-y-4">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={(e) => e.target.files && handleFileChange(e.target.files[0])}
-        />
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])}
+      />
 
-        <Card
-          className={`border-2 border-dashed ${
-            isDragging ? "border-primary bg-primary/5" : "border-gray-300"
-          } transition-colors`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <CardContent
-            className="flex flex-col items-center justify-center p-6 text-center space-y-4 cursor-pointer min-h-[300px]"
-            onClick={triggerFileInput}
-          >
-            {image ? (
-              <div className="relative w-full aspect-square max-w-xs mx-auto">
-                <Image src={image || "/placeholder.svg"} alt="Uploaded image" fill className="object-contain rounded-lg" />
+      <Card
+        className={`border-2 border-dashed transition-colors cursor-pointer ${
+          isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={triggerFileInput}
+      >
+        <CardContent className="flex flex-col items-center justify-center p-8 space-y-4 min-h-[300px]">
+          {image ? (
+            <div className="relative w-full aspect-square max-w-xs mx-auto">
+              <Image 
+                src={image} 
+                alt="Uploaded image" 
+                fill 
+                className="object-contain rounded-lg" 
+              />
+            </div>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                <ImageIcon className="w-8 h-8 text-blue-600" />
               </div>
-            ) : (
-              <>
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <ImageIcon className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Drag and drop your image here</p>
-                  <p className="text-sm text-muted-foreground mt-1">or click to browse</p>
-                </div>
-                <p className="text-xs text-muted-foreground">Supports JPG, PNG, GIF, WebP up to 10MB</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              <div className="text-center">
+                <p className="font-medium text-gray-900">Drop your image here</p>
+                <p className="text-sm text-gray-500 mt-1">or click to browse</p>
+              </div>
+              <p className="text-xs text-gray-400">JPG, PNG, GIF, WebP up to 10MB</p>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-        <div className="flex justify-center">
-          <Button onClick={triggerFileInput} disabled={isClassifying} className="w-full max-w-xs">
-            {isClassifying ? (
-              <span className="flex items-center gap-2">
-                <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                Classifying...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                {image ? "Upload another image" : "Upload image"}
-              </span>
-            )}
-          </Button>
-        </div>
-      </div>
+      <Button 
+        onClick={triggerFileInput} 
+        disabled={isClassifying} 
+        className="w-full"
+        size="lg"
+      >
+        {isClassifying ? (
+          <span className="flex items-center gap-2">
+            <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+            Classifying with {selectedModel}...
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            {image ? "Upload another image" : "Upload image"}
+          </span>
+        )}
+      </Button>
     </div>
   )
 }
