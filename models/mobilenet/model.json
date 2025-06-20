@@ -1,0 +1,13 @@
+{
+  "modelTopology": {
+    "class_name": "Sequential",
+    "config": {
+      "name": "sequential",
+      "layers": []
+    }
+  },
+  "weightsManifest": [],
+  "format": "layers-model",
+  "generatedBy": "TensorFlow.js v4.2.0",
+  "convertedBy": null
+}
